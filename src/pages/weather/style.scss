@@ -1,8 +1,18 @@
 .weather {
-  height: 350px;
-  //   width: 590px;
   width: 100%;
-  background-color: greenyellow;
+  background-color: green;
+  display: flex;
   justify-content: center;
-  align-self: center;
+  margin-top: 20px;
+  .weather-box {
+    background-color: greenyellow;
+    height: 350px;
+    width: 590px;
+    .city-input {
+      width: 100%;
+    }
+    .weather-info {
+      width: 100%;
+    }
+  }
 }
