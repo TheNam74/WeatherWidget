@@ -2,7 +2,7 @@ import axios from "axios";
 import queryString from "query-string";
 
 const axiosClient = axios.create({
-  baseURL: "http://api.openweathermap.org",
+  baseURL: process.env.REACT_APP_API_OPENWEATHERMAP_URL,
   params: {
     appid: process.env.REACT_APP_OPENWEATHERMAP_APIKEY,
   },
