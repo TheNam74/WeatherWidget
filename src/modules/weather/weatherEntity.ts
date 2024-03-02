@@ -1,5 +1,5 @@
 class WeatherEntity {
-  dt?: string = "";
+  dt: string = "";
   humidity?: number = 0;
   temp: {
     day: number;
@@ -17,7 +17,7 @@ class WeatherEntity {
     if (!weather) return;
     //I dont like this bc it take all the field, include the ones that not defined but exist in the pass in object.
     // Object.assign(this, weather);
-    this.dt = weather.dt;
+    this.dt = weather.dt || this.dt;
     this.humidity = weather.humidity;
     this.temp = weather.temp || this.temp;
     this.wind_speed = weather.wind_speed || this.wind_speed;

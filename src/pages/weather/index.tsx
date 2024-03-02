@@ -74,6 +74,14 @@ const CovertEpochUnixTime = (unixEpochTime: string): string => {
 
   return dayOfWeek + " " + time;
 };
+const CovertEpochUnixTimeToDayOfWeek = (unixEpochTime: string): string => {
+  const d = new Date(0); // The 0 there is the key, which sets the date to the epoch
+  d.setUTCSeconds(Number(unixEpochTime));
+  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const dayOfWeek = daysOfWeek[d.getDay()];
+  return dayOfWeek;
+};
 const CovertAqiToString = (aqi: AqiEnum): string => {
   switch (aqi) {
     case AqiEnum.Good:
@@ -90,17 +98,18 @@ const CovertAqiToString = (aqi: AqiEnum): string => {
       return "N/A";
   }
 };
+const GetWeatherIcon = (weather: WeatherEntity): string => {
+  return `${process.env.REACT_APP_OPENWEATHERMAP_URL}/img/wn/${weather.weather[0].icon}@2x.png`;
+};
 
 export default function WeatherPage() {
-  CovertEpochUnixTime("1709282246");
-
   const handleCurrentSelectedChange = (selected: number) => {
     setCurrentSelected(selected);
   };
   const handleChangeUnit = (unit: UnitEnum) => {
     setUnit(unit);
   };
-  const [cityName, setCityName] = useState<string>("");
+  const [cityName, setCityName] = useState<string>("Hanoi");
   const [cityInfo, setCityInfo] = useState<ICityInfo>({
     lat: 0,
     lon: 0,
@@ -108,7 +117,12 @@ export default function WeatherPage() {
     country: "",
     currentLocalTime: "0",
     aqi: AqiEnum.Good,
+    currentTemp: 0,
   });
+  //call one and only.
+  useEffect(() => {
+    handleChange(cityName);
+  }, []);
   //Contain weather info, current + 7 next days.
   const [cityWeather, setCityWeather] = useState<WeatherEntity[]>(
     new Array(MAX_WEATHER_COUNT).fill(new WeatherEntity({}))
@@ -119,10 +133,9 @@ export default function WeatherPage() {
   //setting unit
   const [unit, setUnit] = useState<UnitEnum>(UnitEnum.METRIC);
   //useCallback so this function do not get rerender unintentionally, which lead to not being able to sync with next key stroke
+
   const debouncedHandleChangeCityInput = useCallback(
     lodash.debounce(async (value) => {
-      console.debug("value,", value);
-
       const cityInfoRes = await WeatherPresenter.getCoordinates({
         q: value,
       });
@@ -136,8 +149,7 @@ export default function WeatherPage() {
         lat: cityInfoRes?.[0].lat,
         lon: cityInfoRes?.[0].lon,
       });
-      console.debug("cityInfoRes,", cityInfoRes);
-
+      console.debug(weatherRes.daily);
       //set forecast date back to current.
       setCurrentSelected(0);
       setCityWeather(weatherRes.daily);
@@ -152,6 +164,7 @@ export default function WeatherPage() {
         country: cityInfoRes[0].country,
         currentLocalTime: weatherRes.current.dt,
         aqi: AqiRes.list?.[0]?.main?.aqi,
+        currentTemp: weatherRes.current.temp,
       });
     }, 500),
     []
@@ -161,29 +174,29 @@ export default function WeatherPage() {
   const [isValidCity, setIsValidCity] = useState<boolean>(true);
 
   const handleChange = async (value: string) => {
+    setCityName(value);
     if (value) debouncedHandleChangeCityInput(value);
   };
-  // handleChange("Hanoi");
   return (
     <div className="weather">
       <div className="weather-box">
-        <Input
-          className="city-input"
-          type="text"
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder="Enter city's name"
-          allowClear
-          size="large"
-        />
-        <img src="/assets/images/iconClear.png" />
-        {/* <input
-          placeholder="Enter city's name"
-          className="city-input-custom"
-        ></input> */}
-        {/* <Input.Group compact>
-          <Input style={{ width: "80%" }} onChange={(e) => {}} />
-          {true && <img src="/assets/images/iconClear.png" />}
-        </Input.Group> */}
+        <div className="input-wrapper">
+          <Input
+            className="input-wrapper__area"
+            type="text"
+            onChange={(e) => handleChange(e.target.value)}
+            value={cityName}
+            placeholder="Enter city's name"
+            size="large"
+          />
+          {cityName && (
+            <img
+              className="input-wrapper__clear"
+              src="/assets/images/iconClear.png"
+              onClick={() => setCityName("")}
+            />
+          )}
+        </div>
         <div className="weather-info">
           {isValidCity ? (
             <>
@@ -199,12 +212,20 @@ export default function WeatherPage() {
                   </div>
                   <div className="temperature">
                     <img
-                      src={`${process.env.REACT_APP_OPENWEATHERMAP_URL}/img/wn/${cityWeather[currentSelected].weather[0].icon}@2x.png`}
+                      src={GetWeatherIcon(cityWeather[currentSelected])}
                       width={64}
                       height={64}
                     />
                     <div className="temperature__info">
-                      <span className="temperature__info__num"> 26°</span>
+                      <span className="temperature__info__num">
+                        {ConvertTemperature(
+                          unit,
+                          currentSelected === 0
+                            ? cityInfo.currentTemp
+                            : cityWeather[currentSelected].temp.max
+                        )}
+                        °
+                      </span>
                       <span className="temperature__info__unit">
                         <span
                           className={`change_unit_button ${
@@ -287,12 +308,10 @@ const ForeCastBox = (
       className={`forecast_box ${selected ? "selected" : ""}`}
       onClick={() => handleCurrentSelectedChange(index)}
     >
-      <div className="forecast_box__date">Sun</div>
-      <img
-        src="https://openweathermap.org/img/wn/10d@2x.png"
-        width={48}
-        height={48}
-      />
+      <div className="forecast_box__date">
+        {CovertEpochUnixTimeToDayOfWeek(weather.dt)}
+      </div>
+      <img src={GetWeatherIcon(weather)} width={48} height={48} />
       <div className="forecast_box__higest_temp">
         {ConvertTemperature(unit, weather.temp.max)}°
       </div>

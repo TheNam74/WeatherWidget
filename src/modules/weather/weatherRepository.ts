@@ -13,6 +13,7 @@ export interface ICityInfo {
 
   //custom field
   currentLocalTime: string; // Epoch & Unix Timestamp
+  currentTemp: number;
 }
 //API GET
 export const getCoordinates = (params: { q: string }): Promise<ICityInfo[]> => {
@@ -38,6 +39,7 @@ export interface IGetWeatherInfoResponse {
   daily: WeatherEntity[];
   current: {
     dt: string;
+    temp: number;
   };
 }
 

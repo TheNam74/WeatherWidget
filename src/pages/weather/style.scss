@@ -18,16 +18,29 @@ $font-size-5: 44px;
   .weather-box {
     // height: 350px;
     width: 590px;
-    .city-input {
-      border: 1px solid #969696;
-      border-radius: 4px;
-      box-shadow: 0px 2px 2px 0px #00000040;
+    .input-wrapper {
       width: 100%;
       height: 44px;
       color: $color-medium;
-      .ant-input {
-        font-family: "Roboto" !important;
-        font-size: $font-size-2 !important;
+      position: relative;
+      &__area {
+        border: 1px solid #969696;
+        border-radius: 4px;
+        width: 590px;
+        height: 44px;
+        color: $color-medium;
+        .ant-input {
+          font-family: "Roboto" !important;
+          font-size: $font-size-2 !important;
+        }
+      }
+      &__clear {
+        position: absolute;
+        top: 50%;
+        right: 13px;
+        transform: translateY(-50%);
+        z-index: 99999999;
+        cursor: pointer;
       }
       // .ant-input-group-addon {
       //   background: white;
@@ -70,15 +83,12 @@ $font-size-5: 44px;
           flex-direction: column;
 
           width: 50%;
-          background-color: rgb(130, 89, 89);
           .location {
-            background-color: rgb(128, 141, 141);
             height: 56px;
             &__info {
               font-weight: bold;
               color: $color-medium;
               font-size: $font-size-3;
-              background-color: rgb(87, 133, 133);
               display: block;
             }
             &__overall {
@@ -88,11 +98,9 @@ $font-size-5: 44px;
             }
           }
           .temperature {
-            background-color: rgb(30, 50, 50);
             height: 64px;
             display: flex;
             &__info {
-              background-color: rgb(64, 192, 192);
               height: 100%;
               display: flex;
 
@@ -102,6 +110,8 @@ $font-size-5: 44px;
                 font-size: $font-size-5;
                 box-sizing: border-box;
                 padding-top: 5px;
+                margin-left: 6px;
+                margin-right: 6px;
               }
               &__unit {
                 font-weight: bold;
@@ -122,7 +132,6 @@ $font-size-5: 44px;
         }
         &__detail {
           width: 50%;
-          background-color: rgb(165, 154, 154);
           display: flex;
 
           flex-direction: column-reverse;
@@ -176,6 +185,7 @@ $font-size-5: 44px;
       .invalid_city {
         width: 100%;
         height: 100%;
+        border-radius: 4px;
         background-color: white;
         display: flex;
         flex-direction: column;
