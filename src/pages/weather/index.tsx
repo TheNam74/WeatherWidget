@@ -1,106 +1,22 @@
 import React, { useCallback, useEffect, useState } from "react";
-import "./style.scss";
-import { Button, Input } from "antd";
+import { Input } from "antd";
 import lodash from "lodash";
 
-import WeatherPresenter from "../../modules/weather/weatherPresenter";
+import "./style.scss";
 import {
-  AqiEnum,
-  ICityInfo,
-  IGetWeatherInfoResponse,
-} from "../../modules/weather/weatherRepository";
-import WeatherEntity from "../../modules/weather/weatherEntity";
+  ConvertDegreeToCompassPoint,
+  ConvertTemperature,
+  ConvertWindSpeed,
+  CovertAqiToString,
+  CovertEpochUnixTime,
+  GetWeatherIcon,
+} from "./helper";
+import WeatherPresenter from "modules/weather/weatherPresenter";
+import WeatherEntity from "modules/weather/weatherEntity";
+import { AqiEnum, ICityInfo, UnitEnum } from "modules/weather/weatherInterface";
+import { ForeCastBox } from "./components/ForeCastBox";
 
 const MAX_WEATHER_COUNT = 8; // Maximum number of elements in the cityWeather array
-enum UnitEnum {
-  METRIC = "metric", //Celcius, meter/sec
-  IMPERIAL = "imperial", //Fehrenheit, mile/hour
-  //default Kelvin, metre/sec
-}
-const ConvertDegreeToCompassPoint = (wind_deg: number): string => {
-  const compassPoints = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-  const rawPosition = Math.floor(wind_deg / 45 + 0.5);
-  const arrayPosition = rawPosition % 8;
-  return compassPoints[arrayPosition];
-};
-const ConvertWindSpeed = (
-  targetUnit: UnitEnum,
-  windSpeedMPS: number
-): string => {
-  switch (targetUnit) {
-    case UnitEnum.METRIC:
-      return " " + Math.round(windSpeedMPS * 3.6) + " KPH"; // m/s to km/h
-    case UnitEnum.IMPERIAL:
-      return " " + Math.round(windSpeedMPS * 2.23694) + " MPH"; //m/s to mile/h
-    default:
-      return " N/A ";
-  }
-};
-const ConvertTemperature = (targetUnit: UnitEnum, tempInK: number): number => {
-  let ret;
-  switch (targetUnit) {
-    case UnitEnum.METRIC:
-      ret = tempInK - 273.15; //K to C
-      break;
-    case UnitEnum.IMPERIAL:
-      ret = ((tempInK - 273.15) * 9) / 5 + 32; //K to F
-      break;
-    default:
-      ret = 0;
-      break;
-  }
-  ret = Math.round(ret);
-  return ret;
-};
-const CovertEpochUnixTime = (unixEpochTime: string): string => {
-  const d = new Date(0); // The 0 there is the key, which sets the date to the epoch
-  d.setUTCSeconds(Number(unixEpochTime));
-  const daysOfWeek = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-
-  const dayOfWeek = daysOfWeek[d.getDay()];
-
-  const time = d.toLocaleString("en-US", {
-    hour: "2-digit",
-    hour12: true,
-  });
-
-  return dayOfWeek + " " + time;
-};
-const CovertEpochUnixTimeToDayOfWeek = (unixEpochTime: string): string => {
-  const d = new Date(0); // The 0 there is the key, which sets the date to the epoch
-  d.setUTCSeconds(Number(unixEpochTime));
-  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  const dayOfWeek = daysOfWeek[d.getDay()];
-  return dayOfWeek;
-};
-const CovertAqiToString = (aqi: AqiEnum): string => {
-  switch (aqi) {
-    case AqiEnum.Good:
-      return "Good";
-    case AqiEnum.Fair:
-      return "Fair";
-    case AqiEnum.Moderate:
-      return "Moderate";
-    case AqiEnum.Poor:
-      return "Poor";
-    case AqiEnum.VeryPoor:
-      return "Very Poor";
-    default:
-      return "N/A";
-  }
-};
-const GetWeatherIcon = (weather: WeatherEntity): string => {
-  return `${process.env.REACT_APP_OPENWEATHERMAP_URL}/img/wn/${weather.weather[0].icon}@2x.png`;
-};
 
 export default function WeatherPage() {
   const handleCurrentSelectedChange = (selected: number) => {
@@ -119,11 +35,11 @@ export default function WeatherPage() {
     aqi: AqiEnum.Good,
     currentTemp: 0,
   });
-  //call one and only.
+
   useEffect(() => {
     handleChange(cityName);
   }, []);
-  //Contain weather info, current + 7 next days.
+  //Contain weather info, current day and 7 next days.
   const [cityWeather, setCityWeather] = useState<WeatherEntity[]>(
     new Array(MAX_WEATHER_COUNT).fill(new WeatherEntity({}))
   );
@@ -132,8 +48,11 @@ export default function WeatherPage() {
 
   //setting unit
   const [unit, setUnit] = useState<UnitEnum>(UnitEnum.METRIC);
-  //useCallback so this function do not get rerender unintentionally, which lead to not being able to sync with next key stroke
 
+  //setting valid city
+  const [isValidCity, setIsValidCity] = useState<boolean>(true);
+
+  //useCallback so this function do not get rerender unintentionally, which lead to not being able to sync with next key stroke
   const debouncedHandleChangeCityInput = useCallback(
     lodash.debounce(async (value) => {
       const cityInfoRes = await WeatherPresenter.getCoordinates({
@@ -149,7 +68,6 @@ export default function WeatherPage() {
         lat: cityInfoRes?.[0].lat,
         lon: cityInfoRes?.[0].lon,
       });
-      console.debug(weatherRes.daily);
       //set forecast date back to current.
       setCurrentSelected(0);
       setCityWeather(weatherRes.daily);
@@ -169,9 +87,6 @@ export default function WeatherPage() {
     }, 500),
     []
   );
-
-  //setting valid city
-  const [isValidCity, setIsValidCity] = useState<boolean>(true);
 
   const handleChange = async (value: string) => {
     setCityName(value);
@@ -235,7 +150,7 @@ export default function WeatherPage() {
                         >
                           F
                         </span>
-                        /
+                        {" / "}
                         <span
                           className={`change_unit_button ${
                             unit === UnitEnum.METRIC ? "selected" : ""
@@ -296,28 +211,3 @@ export default function WeatherPage() {
     </div>
   );
 }
-const ForeCastBox = (
-  weather: WeatherEntity,
-  selected: boolean = false,
-  index: number,
-  unit: UnitEnum,
-  handleCurrentSelectedChange: (param: number) => void
-) => {
-  return (
-    <div
-      className={`forecast_box ${selected ? "selected" : ""}`}
-      onClick={() => handleCurrentSelectedChange(index)}
-    >
-      <div className="forecast_box__date">
-        {CovertEpochUnixTimeToDayOfWeek(weather.dt)}
-      </div>
-      <img src={GetWeatherIcon(weather)} width={48} height={48} />
-      <div className="forecast_box__higest_temp">
-        {ConvertTemperature(unit, weather.temp.max)}°
-      </div>
-      <div className="forecast_box__lowest_temp">
-        {ConvertTemperature(unit, weather.temp.min)}°
-      </div>
-    </div>
-  );
-};
