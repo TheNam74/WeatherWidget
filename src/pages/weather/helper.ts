@@ -1,13 +1,10 @@
-import WeatherEntity from "modules/weather/weatherEntity";
 import { AqiEnum, UnitEnum } from "modules/weather/weatherInterface";
-
 export const ConvertDegreeToCompassPoint = (wind_deg: number): string => {
   const compassPoints = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
   const rawPosition = Math.floor(wind_deg / 45 + 0.5);
   const arrayPosition = rawPosition % 8;
   return compassPoints[arrayPosition];
 };
-
 export const ConvertWindSpeed = (
   targetUnit: UnitEnum,
   windSpeedMPS: number

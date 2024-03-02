@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Input } from "antd";
 import lodash from "lodash";
-
 import "./style.scss";
 import {
   ConvertDegreeToCompassPoint,
