@@ -4,14 +4,12 @@
 import axiosClient from "../axiosClient";
 import WeatherEntity from "./weatherEntity";
 
-// interface IParams {
-//   q: string;
-// }
 export interface ICityInfo {
   lat: number;
   lon: number;
   name: string;
   country: string;
+  aqi: AqiEnum;
 
   //custom field
   currentLocalTime: string; // Epoch & Unix Timestamp
@@ -46,20 +44,24 @@ export interface IGetWeatherInfoResponse {
 export const getAirQuality = (params: {
   lat: number;
   lon: number;
-}): Promise<any> => {
+}): Promise<IGetAirQualityResponse> => {
   const url = "/data/2.5/air_pollution";
 
-  return axiosClient.get(url, { params }).then((res) => {
-    return {
-      daily: WeatherEntity.createListWeather(res.daily),
-      current: res.current,
-    };
-  });
+  return axiosClient.get(url, { params });
 };
 
-export interface IGetWeatherInfoResponse {
-  daily: WeatherEntity[];
-  current: {
-    dt: string;
-  };
+export interface IGetAirQualityResponse {
+  list: {
+    main: {
+      aqi: AqiEnum;
+    };
+  }[];
+}
+
+export enum AqiEnum {
+  Good = 1,
+  Fair = 2,
+  Moderate = 3,
+  Poor = 4,
+  VeryPoor = 5,
 }

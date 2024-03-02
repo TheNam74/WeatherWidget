@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import "./style.scss";
-import { Input } from "antd";
+import { Button, Input } from "antd";
+import lodash from "lodash";
+
 import WeatherPresenter from "../../modules/weather/weatherPresenter";
 import {
+  AqiEnum,
   ICityInfo,
   IGetWeatherInfoResponse,
 } from "../../modules/weather/weatherRepository";
@@ -49,7 +52,7 @@ const ConvertTemperature = (targetUnit: UnitEnum, tempInK: number): number => {
   ret = Math.round(ret);
   return ret;
 };
-const CovertEpochUnixTime = (unixEpochTime: string) => {
+const CovertEpochUnixTime = (unixEpochTime: string): string => {
   const d = new Date(0); // The 0 there is the key, which sets the date to the epoch
   d.setUTCSeconds(Number(unixEpochTime));
   const daysOfWeek = [
@@ -71,6 +74,22 @@ const CovertEpochUnixTime = (unixEpochTime: string) => {
 
   return dayOfWeek + " " + time;
 };
+const CovertAqiToString = (aqi: AqiEnum): string => {
+  switch (aqi) {
+    case AqiEnum.Good:
+      return "Good";
+    case AqiEnum.Fair:
+      return "Fair";
+    case AqiEnum.Moderate:
+      return "Moderate";
+    case AqiEnum.Poor:
+      return "Poor";
+    case AqiEnum.VeryPoor:
+      return "Very Poor";
+    default:
+      return "N/A";
+  }
+};
 
 export default function WeatherPage() {
   CovertEpochUnixTime("1709282246");
@@ -88,6 +107,7 @@ export default function WeatherPage() {
     name: "",
     country: "",
     currentLocalTime: "0",
+    aqi: AqiEnum.Good,
   });
   //Contain weather info, current + 7 next days.
   const [cityWeather, setCityWeather] = useState<WeatherEntity[]>(
@@ -98,37 +118,52 @@ export default function WeatherPage() {
 
   //setting unit
   const [unit, setUnit] = useState<UnitEnum>(UnitEnum.METRIC);
-  const handleChange = (value: string) => {
-    WeatherPresenter.getCoordinates({
-      q: value,
-    }).then((cityInfoRes: ICityInfo[]) => {
-      //NAMTODO: coi nếu incorrect cityname thì trả gì chứ check vầy méo đc
-      if (!cityInfoRes || cityInfoRes.length == 0) return;
-      WeatherPresenter.getWeatherInfo({
-        lat: cityInfo.lat,
-        lon: cityInfo?.lon,
-      }).then((weatherRes: IGetWeatherInfoResponse) => {
-        //NAMTODO, handle res lỗi
-        setCityWeather(weatherRes.daily);
-        setCityInfo({
-          lat: cityInfoRes[0].lat,
-          lon: cityInfoRes[0].lon,
-          name: cityInfoRes[0].name,
-          country: cityInfoRes[0].country,
-          currentLocalTime: weatherRes.current.dt,
-        });
+  //useCallback so this function do not get rerender unintentionally, which lead to not being able to sync with next key stroke
+  const debouncedHandleChangeCityInput = useCallback(
+    lodash.debounce(async (value) => {
+      console.debug("value,", value);
+
+      const cityInfoRes = await WeatherPresenter.getCoordinates({
+        q: value,
       });
-    });
+      //invalid city
+      if (!cityInfoRes || cityInfoRes.length == 0) {
+        setIsValidCity(false);
+        return;
+      }
+      setIsValidCity(true);
+      const weatherRes = await WeatherPresenter.getWeatherInfo({
+        lat: cityInfoRes?.[0].lat,
+        lon: cityInfoRes?.[0].lon,
+      });
+      console.debug("cityInfoRes,", cityInfoRes);
+
+      //set forecast date back to current.
+      setCurrentSelected(0);
+      setCityWeather(weatherRes.daily);
+      const AqiRes = await WeatherPresenter.getAirQuality({
+        lat: cityInfoRes?.[0].lat,
+        lon: cityInfoRes?.[0].lon,
+      });
+      setCityInfo({
+        lat: cityInfoRes[0].lat,
+        lon: cityInfoRes[0].lon,
+        name: cityInfoRes[0].name,
+        country: cityInfoRes[0].country,
+        currentLocalTime: weatherRes.current.dt,
+        aqi: AqiRes.list?.[0]?.main?.aqi,
+      });
+    }, 500),
+    []
+  );
+
+  //setting valid city
+  const [isValidCity, setIsValidCity] = useState<boolean>(true);
+
+  const handleChange = async (value: string) => {
+    if (value) debouncedHandleChangeCityInput(value);
   };
-  // useEffect(() => {
-  //   WeatherPresenter.getWeatherInfo({
-  //     lat: cityInfo.lat,
-  //     lon: cityInfo?.lon,
-  //   }).then((res: any) => {
-  //     //NAMTODO, handle res lỗi
-  //     setCityWeather(res.daily);
-  //   });
-  // }, [cityInfo]);
+  // handleChange("Hanoi");
   return (
     <div className="weather">
       <div className="weather-box">
@@ -138,53 +173,67 @@ export default function WeatherPage() {
           onChange={(e) => handleChange(e.target.value)}
           placeholder="Enter city's name"
           allowClear
+          size="large"
         />
+        <img src="/assets/images/iconClear.png" />
+        {/* <input
+          placeholder="Enter city's name"
+          className="city-input-custom"
+        ></input> */}
+        {/* <Input.Group compact>
+          <Input style={{ width: "80%" }} onChange={(e) => {}} />
+          {true && <img src="/assets/images/iconClear.png" />}
+        </Input.Group> */}
         <div className="weather-info">
-          <div className="current">
-            <div className="current__overview">
-              <div className="location">
-                <span className="location__info">{`${cityInfo.name}, ${cityInfo.country}`}</span>
-                <span className="location__overall">{`${CovertEpochUnixTime(
-                  cityInfo.currentLocalTime
-                )} • ${
-                  cityWeather[currentSelected].weather[0].description
-                }`}</span>
-              </div>
-              <div className="temperature">
-                <img
-                  src={`${process.env.REACT_APP_OPENWEATHERMAP_URL}/img/wn/${cityWeather[currentSelected].weather[0].icon}@2x.png`}
-                  width={64}
-                  height={64}
-                />
-                <div className="temperature__info">
-                  <span className="temperature__info__num"> 26°</span>
-                  <span className="temperature__info__unit">
-                    <span
-                      className={`change_unit_button ${
-                        unit === UnitEnum.IMPERIAL ? "selected" : ""
-                      } `}
-                      onClick={() => handleChangeUnit(UnitEnum.IMPERIAL)}
-                    >
-                      F
-                    </span>
-                    /
-                    <span
-                      className={`change_unit_button ${
-                        unit === UnitEnum.METRIC ? "selected" : ""
-                      } `}
-                      onClick={() => handleChangeUnit(UnitEnum.METRIC)}
-                    >
-                      C
-                    </span>
-                  </span>
+          {isValidCity ? (
+            <>
+              <div className="current">
+                <div className="current__overview">
+                  <div className="location">
+                    <span className="location__info">{`${cityInfo.name}, ${cityInfo.country}`}</span>
+                    <span className="location__overall">{`${CovertEpochUnixTime(
+                      cityInfo.currentLocalTime
+                    )} • ${
+                      cityWeather[currentSelected].weather[0].description
+                    }`}</span>
+                  </div>
+                  <div className="temperature">
+                    <img
+                      src={`${process.env.REACT_APP_OPENWEATHERMAP_URL}/img/wn/${cityWeather[currentSelected].weather[0].icon}@2x.png`}
+                      width={64}
+                      height={64}
+                    />
+                    <div className="temperature__info">
+                      <span className="temperature__info__num"> 26°</span>
+                      <span className="temperature__info__unit">
+                        <span
+                          className={`change_unit_button ${
+                            unit === UnitEnum.IMPERIAL ? "selected" : ""
+                          } `}
+                          onClick={() => handleChangeUnit(UnitEnum.IMPERIAL)}
+                        >
+                          F
+                        </span>
+                        /
+                        <span
+                          className={`change_unit_button ${
+                            unit === UnitEnum.METRIC ? "selected" : ""
+                          } `}
+                          onClick={() => handleChangeUnit(UnitEnum.METRIC)}
+                        >
+                          C
+                        </span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="current__detail">
-              <div>
-                <span>Humidity: {cityWeather[currentSelected].humidity}%</span>
-                <span>
-                  {`Wind:
+                <div className="current__detail">
+                  <div>
+                    <span>
+                      Humidity: {cityWeather[currentSelected].humidity}%
+                    </span>
+                    <span>
+                      {`Wind:
                   ${ConvertWindSpeed(
                     unit,
                     cityWeather[currentSelected].wind_speed
@@ -192,22 +241,35 @@ export default function WeatherPage() {
                   ${ConvertDegreeToCompassPoint(
                     cityWeather[currentSelected].wind_deg
                   )}`}
-                </span>
-                <span>Air Quality: Moderate</span>
+                    </span>
+                    {currentSelected === 0 && (
+                      <span>
+                        Air Quality: {CovertAqiToString(cityInfo.aqi)}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
+              <div className="forecast">
+                {cityWeather.map((weather, index) => {
+                  return ForeCastBox(
+                    weather,
+                    index === currentSelected,
+                    index,
+                    unit,
+                    handleCurrentSelectedChange
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="invalid_city">
+              <img src="/assets/images/inValidCity.png" />
+              <span className="invalid_city__text">
+                We could not find weather information for the location above
+              </span>
             </div>
-          </div>
-          <div className="forecast">
-            {cityWeather.map((weather, index) => {
-              return ForeCastBox(
-                weather,
-                index === currentSelected,
-                index,
-                unit,
-                handleCurrentSelectedChange
-              );
-            })}
-          </div>
+          )}
         </div>
       </div>
     </div>
