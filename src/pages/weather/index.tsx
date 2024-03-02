@@ -34,6 +34,11 @@ export default function WeatherPage() {
     currentLocalTime: "0",
     aqi: AqiEnum.Good,
     currentTemp: 0,
+    currentIcon: "",
+    currentHumidity: 0,
+    currentWind_speed: 0,
+    current_deg: 0,
+    currentDescription: "",
   });
 
   useEffect(() => {
@@ -75,6 +80,7 @@ export default function WeatherPage() {
         lat: cityInfoRes?.[0].lat,
         lon: cityInfoRes?.[0].lon,
       });
+      console.debug("weatherRes.current", weatherRes.current);
       setCityInfo({
         lat: cityInfoRes[0].lat,
         lon: cityInfoRes[0].lon,
@@ -83,11 +89,15 @@ export default function WeatherPage() {
         currentLocalTime: weatherRes.current.dt,
         aqi: AqiRes.list?.[0]?.main?.aqi,
         currentTemp: weatherRes.current.temp,
+        currentIcon: weatherRes.current.weather[0].icon,
+        currentHumidity: weatherRes.current.humidity,
+        currentWind_speed: weatherRes.current.wind_speed,
+        current_deg: weatherRes.current.wind_deg,
+        currentDescription: weatherRes.current.weather[0].description,
       });
     }, 500),
     []
   );
-
   const handleChange = async (value: string) => {
     setCityName(value);
     if (value) debouncedHandleChangeCityInput(value);
@@ -127,7 +137,11 @@ export default function WeatherPage() {
                   </div>
                   <div className="temperature">
                     <img
-                      src={GetWeatherIcon(cityWeather[currentSelected])}
+                      src={GetWeatherIcon(
+                        currentSelected === 0
+                          ? cityInfo.currentIcon
+                          : cityWeather[currentSelected].weather[0].icon
+                      )}
                       width={64}
                       height={64}
                     />
@@ -166,16 +180,24 @@ export default function WeatherPage() {
                 <div className="current__detail">
                   <div>
                     <span>
-                      Humidity: {cityWeather[currentSelected].humidity}%
+                      Humidity:{" "}
+                      {currentSelected === 0
+                        ? cityInfo.currentHumidity
+                        : cityWeather[currentSelected].humidity}
+                      %
                     </span>
                     <span>
                       {`Wind:
                   ${ConvertWindSpeed(
                     unit,
-                    cityWeather[currentSelected].wind_speed
+                    currentSelected === 0
+                      ? cityInfo.currentWind_speed
+                      : cityWeather[currentSelected].wind_speed
                   )} 
                   ${ConvertDegreeToCompassPoint(
-                    cityWeather[currentSelected].wind_deg
+                    currentSelected === 0
+                      ? cityInfo.current_deg
+                      : cityWeather[currentSelected].wind_deg
                   )}`}
                     </span>
                     {currentSelected === 0 && (

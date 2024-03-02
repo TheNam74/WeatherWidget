@@ -88,6 +88,6 @@ export const CovertAqiToString = (aqi: AqiEnum): string => {
       return "N/A";
   }
 };
-export const GetWeatherIcon = (weather: WeatherEntity): string => {
-  return `${process.env.REACT_APP_OPENWEATHERMAP_URL}/img/wn/${weather.weather[0].icon}@2x.png`;
+export const GetWeatherIcon = (icon: string): string => {
+  return `${process.env.REACT_APP_OPENWEATHERMAP_URL}/img/wn/${icon}@2x.png`;
 };

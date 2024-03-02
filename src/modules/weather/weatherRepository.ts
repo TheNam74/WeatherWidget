@@ -13,6 +13,13 @@ export interface IGetWeatherInfoResponse {
   current: {
     dt: string;
     temp: number;
+    humidity: number;
+    wind_speed: number;
+    wind_deg: number;
+    weather: {
+      icon: string;
+      description: string;
+    }[];
   };
 }
 export const getWeatherInfo = (params: {

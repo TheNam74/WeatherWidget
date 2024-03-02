@@ -13,6 +13,11 @@ export interface ICityInfo {
   //custom field
   currentLocalTime: string; // Epoch & Unix Timestamp
   currentTemp: number;
+  currentIcon: string;
+  currentDescription: string;
+  currentHumidity: number;
+  currentWind_speed: number;
+  current_deg: number;
 }
 export enum AqiEnum {
   Good = 1,

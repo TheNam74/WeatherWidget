@@ -22,7 +22,11 @@ export const ForeCastBox = (
       <div className="forecast_box__date">
         {CovertEpochUnixTimeToDayOfWeek(weather.dt)}
       </div>
-      <img src={GetWeatherIcon(weather)} width={48} height={48} />
+      <img
+        src={GetWeatherIcon(weather.weather[0].icon)}
+        width={48}
+        height={48}
+      />
       <div className="forecast_box__higest_temp">
         {ConvertTemperature(unit, weather.temp.max)}°
       </div>
