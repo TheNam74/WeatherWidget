@@ -40,7 +40,6 @@ export default function WeatherPage() {
     current_deg: 0,
     currentDescription: "",
   });
-
   useEffect(() => {
     handleChange(cityName);
   }, []);
@@ -80,7 +79,6 @@ export default function WeatherPage() {
         lat: cityInfoRes?.[0].lat,
         lon: cityInfoRes?.[0].lon,
       });
-      console.debug("weatherRes.current", weatherRes.current);
       setCityInfo({
         lat: cityInfoRes[0].lat,
         lon: cityInfoRes[0].lon,

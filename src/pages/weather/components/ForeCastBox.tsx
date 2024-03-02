@@ -18,6 +18,7 @@ export const ForeCastBox = (
     <div
       className={`forecast_box ${selected ? "selected" : ""}`}
       onClick={() => handleCurrentSelectedChange(index)}
+      key={index}
     >
       <div className="forecast_box__date">
         {CovertEpochUnixTimeToDayOfWeek(weather.dt)}
