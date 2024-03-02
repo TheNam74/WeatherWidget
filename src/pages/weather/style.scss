@@ -23,16 +23,16 @@ $font-size-5: 44px;
       height: 44px;
       color: $color-medium;
       position: relative;
+      .ant-input {
+        font-family: "Roboto" !important;
+        font-size: $font-size-2 !important;
+      }
       &__area {
         border: 1px solid #969696;
         border-radius: 4px;
         width: 590px;
         height: 44px;
         color: $color-medium;
-        .ant-input {
-          font-family: "Roboto" !important;
-          font-size: $font-size-2 !important;
-        }
       }
       &__clear {
         position: absolute;
