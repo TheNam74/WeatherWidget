@@ -171,6 +171,12 @@ $font-size-5: 44px;
             font-size: $font-size-1;
           }
         }
+        .forecast_box:first-child {
+          border-radius: 0 0 0 2px;
+        }
+        .forecast_box:last-child {
+          border-radius: 0 0 2px 0;
+        }
         .forecast_box.selected,
         .forecast_box:hover {
           border: 1px solid;
